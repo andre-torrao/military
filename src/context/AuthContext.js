@@ -12,7 +12,6 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Register with email + password
   async function register(email, password, name) {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -23,49 +22,59 @@ export function AuthProvider({ children }) {
     return data;
   }
 
-  // Login
   async function login(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
   }
 
-  // Logout
   async function logout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    await supabase.auth.signOut();
     setUser(null);
     setUserProfile(null);
   }
 
-  // Save/update profile in Supabase
   async function saveProfile(uid, data) {
-    const { error } = await supabase
+    // Try insert first, then update if already exists
+    const { error: insertError } = await supabase
       .from('profiles')
-      .upsert({ id: uid, ...data }, { onConflict: 'id' });
-    if (error) throw error;
+      .insert({ id: uid, ...data });
+
+    if (insertError && insertError.code === '23505') {
+      // Already exists, update instead
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('id', uid);
+      if (updateError) throw updateError;
+    } else if (insertError) {
+      throw insertError;
+    }
+
     setUserProfile(data);
   }
 
-  // Fetch profile from Supabase
   async function fetchProfile(uid) {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', uid)
-      .single();
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+      .maybeSingle(); // usar maybeSingle em vez de single - não dá erro se não encontrar
+
+    if (error) {
+      console.error('fetchProfile error:', error);
+      return null;
+    }
     if (data) setUserProfile(data);
     return data;
   }
 
-  // Increment workout stats
   async function incrementWorkoutStats(uid) {
     const { data: current } = await supabase
       .from('profiles')
       .select('workouts_completed, total_minutes')
       .eq('id', uid)
-      .single();
+      .maybeSingle();
 
     if (current) {
       const updated = {
@@ -77,13 +86,15 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Listen to auth state changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) fetchProfile(u.id).finally(() => setLoading(false));
-      else setLoading(false);
+      if (u) {
+        fetchProfile(u.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -97,15 +108,9 @@ export function AuthProvider({ children }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = {
-    user,
-    userProfile,
-    loading,
-    register,
-    login,
-    logout,
-    saveProfile,
-    fetchProfile,
-    incrementWorkoutStats,
+    user, userProfile, loading,
+    register, login, logout,
+    saveProfile, fetchProfile, incrementWorkoutStats,
   };
 
   return (
