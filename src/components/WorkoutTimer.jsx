@@ -1,59 +1,89 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function WorkoutTimer({ workout, onComplete, onBack }) {
   const totalExercises = workout.exercises.length;
   const restTime = workout.restBetween;
+  const exercisesRef = useRef(workout.exercises);
+  const restTimeRef = useRef(restTime);
+  const totalExercisesRef = useRef(totalExercises);
 
-  // Phase: 'exercise' | 'rest' | 'done'
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState('exercise');
   const [timeLeft, setTimeLeft] = useState(workout.exercises[0].duration);
   const [isRunning, setIsRunning] = useState(false);
   const [totalElapsed, setTotalElapsed] = useState(0);
   const intervalRef = useRef(null);
+  const phaseRef = useRef(phase);
+  const currentIndexRef = useRef(currentIndex);
 
-  const currentExercise = workout.exercises[currentIndex];
-  const progress = ((currentIndex / totalExercises) + (phase === 'rest' ? 0.5 / totalExercises : 0));
-  const pct = Math.round(progress * 100);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+
+  const tick = useCallback(() => {
+    setTimeLeft(t => {
+      if (t <= 1) {
+        const p = phaseRef.current;
+        const idx = currentIndexRef.current;
+        const total = totalExercisesRef.current;
+        const rest = restTimeRef.current;
+        const exs = exercisesRef.current;
+
+        if (p === 'exercise') {
+          if (idx < total - 1) {
+            setPhase('rest');
+            return rest;
+          } else {
+            setIsRunning(false);
+            setPhase('done');
+            clearInterval(intervalRef.current);
+            return 0;
+          }
+        } else {
+          const next = idx + 1;
+          setCurrentIndex(next);
+          setPhase('exercise');
+          return exs[next].duration;
+        }
+      }
+      return t - 1;
+    });
+    setTotalElapsed(e => e + 1);
+  }, []);
 
   useEffect(() => {
-    if (!isRunning) return;
-    intervalRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          // Advance phase
-          if (phase === 'exercise') {
-            if (currentIndex < totalExercises - 1) {
-              setPhase('rest');
-              return restTime;
-            } else {
-              setIsRunning(false);
-              setPhase('done');
-              clearInterval(intervalRef.current);
-              return 0;
-            }
-          } else {
-            // rest → next exercise
-            const next = currentIndex + 1;
-            setCurrentIndex(next);
-            setPhase('exercise');
-            return workout.exercises[next].duration;
-          }
-        }
-        return t - 1;
-      });
-      setTotalElapsed(e => e + 1);
-    }, 1000);
+    if (!isRunning) {
+      clearInterval(intervalRef.current);
+      return;
+    }
+    intervalRef.current = setInterval(tick, 1000);
     return () => clearInterval(intervalRef.current);
-  }, [isRunning, phase, currentIndex]);
+  }, [isRunning, tick]);
 
   const formatTime = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
   const ringRadius = 54;
   const ringCirc = 2 * Math.PI * ringRadius;
+  const currentExercise = workout.exercises[currentIndex];
   const maxTime = phase === 'rest' ? restTime : currentExercise.duration;
   const ringProgress = timeLeft / maxTime;
   const ringDash = ringCirc * ringProgress;
+
+  const progress = ((currentIndex / totalExercises) + (phase === 'rest' ? 0.5 / totalExercises : 0));
+  const pct = Math.round(progress * 100);
+
+  const handleSkip = () => {
+    const idx = currentIndexRef.current;
+    const p = phaseRef.current;
+    if (p === 'exercise' && idx < totalExercises - 1) {
+      setPhase('rest');
+      setTimeLeft(restTime);
+    } else if (p === 'rest') {
+      const next = idx + 1;
+      setCurrentIndex(next);
+      setPhase('exercise');
+      setTimeLeft(workout.exercises[next].duration);
+    }
+  };
 
   if (phase === 'done') {
     return (
@@ -83,24 +113,20 @@ export default function WorkoutTimer({ workout, onComplete, onBack }) {
 
   return (
     <div style={styles.timerScreen}>
-      {/* Header */}
       <div style={styles.timerHeader}>
         <button style={styles.backBtn} onClick={onBack}>← ABORT</button>
         <span style={styles.missionLabel}>{workout.template.name}</span>
       </div>
 
-      {/* Progress bar */}
       <div style={styles.progressBar}>
         <div style={{ ...styles.progressFill, width: `${pct}%` }} />
         <span style={styles.progressText}>{currentIndex + 1}/{totalExercises}</span>
       </div>
 
-      {/* Phase indicator */}
       <div style={{ ...styles.phaseTag, background: phase === 'rest' ? '#1a3a2a' : '#1a2a3a' }}>
         {phase === 'rest' ? '⏸ REST' : '⚡ EXECUTE'}
       </div>
 
-      {/* Timer ring */}
       <div style={styles.ringContainer}>
         <svg width="140" height="140" viewBox="0 0 140 140">
           <circle cx="70" cy="70" r={ringRadius} fill="none" stroke="#1e2a1e" strokeWidth="8"/>
@@ -123,7 +149,6 @@ export default function WorkoutTimer({ workout, onComplete, onBack }) {
         </svg>
       </div>
 
-      {/* Exercise info */}
       {phase === 'exercise' && (
         <div style={styles.exerciseInfo}>
           <h2 style={styles.exerciseName}>{currentExercise.name}</h2>
@@ -149,7 +174,6 @@ export default function WorkoutTimer({ workout, onComplete, onBack }) {
         </div>
       )}
 
-      {/* Controls */}
       <div style={styles.controls}>
         <button
           style={{ ...styles.ctrlBtn, background: isRunning ? '#3a2020' : '#1a3a1a' }}
@@ -157,20 +181,7 @@ export default function WorkoutTimer({ workout, onComplete, onBack }) {
         >
           {isRunning ? '⏸ PAUSE' : '▶ GO'}
         </button>
-        <button
-          style={styles.ctrlBtnSm}
-          onClick={() => {
-            if (phase === 'exercise' && currentIndex < totalExercises - 1) {
-              setPhase('rest');
-              setTimeLeft(restTime);
-            } else if (phase === 'rest') {
-              const next = currentIndex + 1;
-              setCurrentIndex(next);
-              setPhase('exercise');
-              setTimeLeft(workout.exercises[next].duration);
-            }
-          }}
-        >
+        <button style={styles.ctrlBtnSm} onClick={handleSkip}>
           SKIP ⏭
         </button>
       </div>
