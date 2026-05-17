@@ -31,7 +31,7 @@ export default function OnboardingPage({ onComplete }) {
       age: age ? parseInt(age) : null,
       workoutsCompleted: 0,
       totalMinutes: 0,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     await saveProfile(user.uid, profile);
     onComplete(profile);
