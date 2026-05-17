@@ -9,11 +9,9 @@ const SCREENS = { HOME: 'home', PREVIEW: 'preview', TIMER: 'timer' };
 function HomeScreen({ onGenerate }) {
   return (
     <div style={styles.home}>
-      {/* Grid background */}
       <div style={styles.grid} />
 
       <div style={styles.homeContent}>
-        {/* Logo / Header */}
         <div style={styles.emblem}>
           <svg viewBox="0 0 80 80" width="80" height="80">
             <polygon points="40,4 76,28 76,52 40,76 4,52 4,28" fill="none" stroke="#c8a96e" strokeWidth="1.5"/>
@@ -30,7 +28,6 @@ function HomeScreen({ onGenerate }) {
           No equipment. No excuses. Move out.
         </p>
 
-        {/* Stats row */}
         <div style={styles.statsRow}>
           {[['15', 'EXERCISES'], ['4', 'PROTOCOLS'], ['15 MIN', 'MISSION TIME'], ['0', 'EQUIPMENT']].map(([v, l]) => (
             <div key={l} style={styles.stat}>
@@ -69,7 +66,6 @@ export default function App() {
   }, []);
 
   const handleStart = useCallback(() => setScreen(SCREENS.TIMER), []);
-  const handleBack = useCallback(() => setScreen(SCREENS.HOME), []);
   const handleComplete = useCallback(() => {
     setWorkout(generateWorkout());
     setScreen(SCREENS.PREVIEW);
@@ -81,6 +77,7 @@ export default function App() {
       workout={workout}
       onStart={handleStart}
       onRegenerate={handleGenerate}
+      onBack={() => setScreen(SCREENS.HOME)}
     />
   );
   if (screen === SCREENS.TIMER) return (
