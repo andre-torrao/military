@@ -1,0 +1,37 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0a0f0a;
+  color: #e2d9c8;
+  font-family: 'Courier New', Courier, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0f0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e2a1e;
+  border-radius: 2px;
+}
