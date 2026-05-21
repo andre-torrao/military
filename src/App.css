@@ -1,48 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
-  background: #F8F9FC;
-  color: #0F172A;
+  background: #F7F8F5;
+  color: #1A1A1A;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-button {
-  font-family: 'Inter', sans-serif;
-  transition: opacity 0.15s, transform 0.1s;
-}
-
-button:active {
-  transform: scale(0.97);
-}
-
-input, select {
-  outline: none;
-  font-family: 'Inter', sans-serif;
-}
-
-input:focus {
-  border-color: #1D4ED8 !important;
-  box-shadow: 0 0 0 3px rgba(29,78,216,0.12);
-}
-
+button { font-family: 'Inter', sans-serif; transition: opacity 0.15s, transform 0.1s; }
+button:active { transform: scale(0.97); }
+input, select { outline: none; font-family: 'Inter', sans-serif; }
+input:focus { border-color: #4CAF50 !important; box-shadow: 0 0 0 3px rgba(76,175,80,0.15); }
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #F8F9FC; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+::-webkit-scrollbar-track { background: #F7F8F5; }
+::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 99px; }
 
-/* Max width for tablet/desktop */
 #root {
-  max-width: 480px;
+  max-width: 430px;
   margin: 0 auto;
   min-height: 100vh;
-  box-shadow: 0 0 60px rgba(0,0,0,0.08);
-  background: #fff;
+  background: #F7F8F5;
+  box-shadow: 0 0 60px rgba(0,0,0,0.06);
+  position: relative;
 }
